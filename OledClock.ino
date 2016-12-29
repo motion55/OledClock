@@ -62,7 +62,8 @@ Adafruit_BMP280 bme; // I2C
 boolean Use_bmp280;
 float Temperature, Pressure;
 float Ave_Temperature, Ave_Pressure;
-int Total_Samples;
+int Count = 0;
+#define	AVE_SAMPLES	128
 
 char ssid[] = "BST";	//  your network SSID (name)
 char pass[] = "";		// your network password
@@ -90,7 +91,6 @@ WiFiUDP udp;
 
 U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ D0, /* dc=*/ D3, /* reset=*/ D4);
 
-int Count = 0;
 
 void setup(void) {
 	Serial.begin(115200);
@@ -105,13 +105,15 @@ void setup(void) {
 	else
 	{
 		Ave_Temperature = bme.readTemperature();
-		Ave_Pressure = bme.readPressure() / 100.0f;
-		Total_Samples = 0;
+		Temperature = Ave_Temperature * AVE_SAMPLES;
+		Ave_Pressure = bme.readPressure();
+		Pressure = Ave_Pressure * AVE_SAMPLES;
 		Count = 0;
 		Use_bmp280 = true;
 	}
 	
 	u8g2.begin();
+	u8g2.setContrast(128);
 	u8g2.clearBuffer();					// clear the internal memory
 	u8g2.setFont(u8g2_font_courR14_tf);	// choose a suitable font
 	u8g2.drawStr(10,32,"Connecting");	// write something to the internal memory
@@ -147,26 +149,20 @@ void setup(void) {
 char TimeText[] = "00:00:00am\0";
 //                 01234567890
 
+
 void loop(void) {
 	UpdateTime();
 	if (Use_bmp280)
 	{
+		Ave_Temperature = Temperature / AVE_SAMPLES;
+		Temperature -= Ave_Temperature;
+		Temperature += bme.readTemperature();
 
-		if (Total_Samples < 100)
-		{
-			Temperature += bme.readTemperature();
-			Pressure += bme.readPressure();
-			Total_Samples++;
-		}
-		else
-		{
-			Ave_Temperature = Temperature / Total_Samples;
-			Ave_Pressure = Pressure / (Total_Samples*100.0f);
-			Temperature = 0;
-			Pressure = 0;
-			Total_Samples = 0;
-		}
+		Ave_Pressure = Pressure / AVE_SAMPLES;
+		Pressure -= Ave_Pressure;
+		Pressure += bme.readPressure();
 	}
+
 	if (Count < 4)
 	{
 		Count++;
@@ -176,11 +172,11 @@ void loop(void) {
 		u8g2.clearBuffer();					// clear the internal memory
 		u8g2.setFont(u8g2_font_courR14_tf);	// choose a suitable font
 		u8g2.drawStr(10, 20, TimeText);
-		String Pressure_Str(Ave_Pressure,2); Pressure_Str += "hPa";
-		if (Ave_Pressure < 1000.0f) Pressure_Str = " " + Pressure_Str;
+		String Pressure_Str(Ave_Pressure/100.0f,2); Pressure_Str += "hPa";
+		if (Ave_Pressure < 100000.0f) Pressure_Str = " " + Pressure_Str;
 		u8g2.setFont(u8g2_font_courR12_tf);	// choose a suitable font
 		u8g2.drawStr(20, 36, Pressure_Str.c_str());
-		String Temperature_Str(Ave_Temperature, 1); Temperature_Str += "C";
+		String Temperature_Str(Ave_Temperature,1); Temperature_Str += "C";
 		if (Ave_Temperature < 10.0f) Temperature_Str = " " + Temperature_Str;
 		u8g2.setFont(u8g2_font_courR24_tf);	// choose a suitable font
 		u8g2.drawStr(20, 63, Temperature_Str.c_str());
