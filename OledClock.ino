@@ -104,9 +104,13 @@ void setup(void) {
 	}
 	else
 	{
-		Ave_Temperature = bme.readTemperature();
+		for (int i = 0; i < 100 && Ave_Temperature<20.0 && Ave_Pressure<50000.0; i++)
+		{
+			delay(10);
+			Ave_Temperature = bme.readTemperature();
+			Ave_Pressure = bme.readPressure();
+		}
 		Temperature = Ave_Temperature * AVE_SAMPLES;
-		Ave_Pressure = bme.readPressure();
 		Pressure = Ave_Pressure * AVE_SAMPLES;
 		Count = 0;
 		Use_bmp280 = true;
