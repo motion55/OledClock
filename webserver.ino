@@ -9,9 +9,6 @@
 #include <WiFiClient.h> 
 #include <ESP8266WebServer.h>
 
-// Access point credentials
-const char *ap_ssid = "ESPap";
-const char *ap_password = "thereisnospoon";
 
 // ESP8266 GPIO pins
 #define GPIO2 2

@@ -91,10 +91,20 @@ WiFiUDP udp;
 
 U8G2_SH1106_128X64_NONAME_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ D8, /* dc=*/ D3, /* reset=*/ D4);
 
+// Access point credentials
+const char *ap_ssid = "OLEDClock";
+const char *ap_password = "bst142857";
 
 void setup(void) {
 	Serial.begin(115200);
 
+  IPAddress local_IP(192,168,8,1);
+  IPAddress gateway(192,168,8,1);
+  IPAddress subnet(255,255,255,0);
+
+  WiFi.softAPConfig(local_IP, gateway, subnet);
+  WiFi.softAP(ap_ssid,ap_password); 
+  
 	DS3231_setup();
 
 	if (!bme.begin(0x76))
@@ -122,6 +132,7 @@ void setup(void) {
 	u8g2.setFont(u8g2_font_courR14_tf);	// choose a suitable font
 	u8g2.drawStr(10,32,"Connecting");	// write something to the internal memory
 	u8g2.sendBuffer();					// transfer internal memory to the display
+
 	for (int i = 0; i<400; i++)
 	{
 		if (WiFi.status() == WL_CONNECTED)
