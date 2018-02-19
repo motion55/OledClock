@@ -106,25 +106,6 @@ void setup(void) {
   
 	DS3231_setup();
 
-	if (!bme.begin(0x76))
-	{
-		Serial.println("Could not find a valid BMP280 sensor, check wiring!");
-		Use_bmp280 = false;
-	}
-	else
-	{
-		for (int i = 0; i < 100 && Ave_Temperature<20.0 && Ave_Pressure<50000.0; i++)
-		{
-			delay(10);
-			Ave_Temperature = bme.readTemperature();
-			Ave_Pressure = bme.readPressure();
-		}
-		Temperature = Ave_Temperature * AVE_SAMPLES;
-		Pressure = Ave_Pressure * AVE_SAMPLES;
-		Count = 0;
-		Use_bmp280 = true;
-	}
-	
 	u8g2.begin();
 	u8g2.setContrast(128);
 	u8g2.clearBuffer();					// clear the internal memory
@@ -148,6 +129,31 @@ void setup(void) {
 	udp.begin(localPort);
 	Serial.print(F("Local port: "));
 	Serial.println(udp.localPort());
+	if (!bme.begin(0x76))
+	{
+		Serial.println("Could not find a valid BMP280 sensor, check wiring!");
+		Use_bmp280 = false;
+	}
+	else
+	{
+		Ave_Temperature = 30.0;
+		Ave_Pressure = 101325;
+		Temperature = Ave_Temperature * AVE_SAMPLES;
+		Pressure = Ave_Pressure * AVE_SAMPLES;
+		for (Count = 0; Count < 128; Count++) {
+			delay(10);
+			
+			Ave_Temperature = Temperature / AVE_SAMPLES;
+			Temperature -= Ave_Temperature;
+			Temperature += bme.readTemperature();
+
+			Ave_Pressure = Pressure / AVE_SAMPLES;
+			Pressure -= Ave_Pressure;
+			Pressure += bme.readPressure();
+		}
+		Count = 0;
+		Use_bmp280 = true;
+	}
 
 	IPAddress addr;
 	if (WiFi.hostByName(ntpServerName, addr))
